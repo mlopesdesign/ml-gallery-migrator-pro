@@ -1,0 +1,269 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: ml-gallery-migrator-pro 1.0.24\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: es_ES\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "ML Gallery Migrator Pro"
+msgstr "ML Gallery Migrator Pro"
+
+msgid "ML Migrator NGG"
+msgstr "ML Migrator NGG"
+
+msgid "Isso apagará TODO o histórico desta sessão de migração. Tem certeza?"
+msgstr "Esto borrará TODO el historial de esta sesión de migración. ¿Está seguro?"
+
+msgid "Interromper a migração agora?"
+msgstr "¿Detener la migración ahora?"
+
+msgid "NextGEN Gallery não encontrado neste site."
+msgstr "NextGEN Gallery no encontrado en este sitio."
+
+msgid "ML Gallery Pro não encontrado. Instale e ative primeiro."
+msgstr "ML Gallery Pro no encontrado. Instale y active primero."
+
+msgid "Galerias"
+msgstr "Galerías"
+
+msgid "Álbuns"
+msgstr "Álbumes"
+
+msgid "Imagens"
+msgstr "Imágenes"
+
+msgid "Miniaturas"
+msgstr "Miniaturas"
+
+msgid "Shortcodes"
+msgstr "Shortcodes"
+
+msgid "Concluído"
+msgstr "Completado"
+
+msgid "Aguardando"
+msgstr "Esperando"
+
+msgid "Executando…"
+msgstr "Ejecutando…"
+
+msgid "Pausado"
+msgstr "Pausado"
+
+msgid "Pronto (aguardando próximo lote)"
+msgstr "Listo (esperando el siguiente lote)"
+
+msgid "Concluído ✓"
+msgstr "Completado ✓"
+
+msgid "Cancelado"
+msgstr "Cancelado"
+
+msgid "Erro ✗"
+msgstr "Error ✗"
+
+msgid "Etapa: Galerias"
+msgstr "Etapa: Galerías"
+
+msgid "Etapa: Álbuns"
+msgstr "Etapa: Álbumes"
+
+msgid "Etapa: Imagens"
+msgstr "Etapa: Imágenes"
+
+msgid "Etapa: Miniaturas"
+msgstr "Etapa: Miniaturas"
+
+msgid "Etapa: Shortcodes"
+msgstr "Etapa: Shortcodes"
+
+msgid "Tudo concluído"
+msgstr "Todo completado"
+
+msgid "Auto-scroll"
+msgstr "Auto-scroll"
+
+msgid "Análise do Acervo NGG"
+msgstr "Análisis de la colección NGG"
+
+msgid "Analisar"
+msgstr "Analizar"
+
+msgid "Controles"
+msgstr "Controles"
+
+msgid "Modo"
+msgstr "Modo"
+
+msgid "Lote contínuo"
+msgstr "Lote continuo"
+
+msgid "Um lote por vez (manual)"
+msgstr "Un lote a la vez (manual)"
+
+msgid "Tamanho do Lote"
+msgstr "Tamaño del lote"
+
+msgid "Etapas habilitadas"
+msgstr "Etapas habilitadas"
+
+msgid "Tudo"
+msgstr "Todo"
+
+msgid "Se já existir:"
+msgstr "Si ya existe:"
+
+msgid "Ignorar"
+msgstr "Ignorar"
+
+msgid "Sobreescrever"
+msgstr "Sobrescribir"
+
+msgid "Parar"
+msgstr "Detener"
+
+msgid "Pausar"
+msgstr "Pausar"
+
+msgid "Retomar"
+msgstr "Reanudar"
+
+msgid "Iniciar Migração"
+msgstr "Iniciar migración"
+
+msgid "Próximo Lote"
+msgstr "Próximo lote"
+
+msgid "Limpar Histórico e Logs"
+msgstr "Limpiar historial y registros"
+
+msgid "Reset"
+msgstr "Restablecer"
+
+msgid "Progresso por Etapa"
+msgstr "Progreso por etapa"
+
+msgid "Etapa"
+msgstr "Etapa"
+
+msgid "Convertidos"
+msgstr "Convertidos"
+
+msgid "Órfãos"
+msgstr "Huérfanos"
+
+msgid "Ignorados (Rev/Draft)"
+msgstr "Ignorados (Rev/Borrador)"
+
+msgid "Erros Reais"
+msgstr "Errores reales"
+
+msgid "Log em Tempo Real"
+msgstr "Registro en tiempo real"
+
+msgid "Copiar Log"
+msgstr "Copiar registro"
+
+msgid "Limpar"
+msgstr "Limpiar"
+
+msgid "Selecione pelo menos uma etapa para iniciar a migração."
+msgstr "Seleccione al menos una etapa para iniciar la migración."
+
+msgid "Próximo lote iniciado. Modo: %1$s, lote: %2$d"
+msgstr "Próximo lote iniciado. Modo: %1$s, lote: %2$d"
+
+msgid "Migração já em curso ou pausada. Use Retomar."
+msgstr "Migración ya en curso o pausada. Use Reanudar."
+
+msgid "Migração iniciada. Modo: %1$s, lote: %2$d, etapas: [%3$s], duplicados: %4$s"
+msgstr "Migración iniciada. Modo: %1$s, lote: %2$d, etapas: [%3$s], duplicados: %4$s"
+
+msgid "Lote concluído. Pronto para próximo lote."
+msgstr "Lote completado. Listo para el siguiente lote."
+
+msgid "Não está em execução (status=%s)"
+msgstr "No se está ejecutando (status=%s)"
+
+msgid "Migração pausada pelo usuário."
+msgstr "Migración pausada por el usuario."
+
+msgid "Migração retomada. Modo: %1$s, lote: %2$d"
+msgstr "Migración reanudada. Modo: %1$s, lote: %2$d"
+
+msgid "Migração cancelada pelo usuário."
+msgstr "Migración cancelada por el usuario."
+
+msgid "Estágio "%s" concluído."
+msgstr "Etapa "%s" completada."
+
+msgid "=== RESUMO DE SHORTCODES ==="
+msgstr "=== RESUMEN DE SHORTCODES ==="
+
+msgid "- Conteúdos analisados: %d"
+msgstr "- Contenidos analizados: %d"
+
+msgid "- Shortcodes encontrados: %d"
+msgstr "- Shortcodes encontrados: %d"
+
+msgid "- Conversões aplicadas: %d"
+msgstr "- Conversiones aplicadas: %d"
+
+msgid "- Ignorados sem mapeamento: %d"
+msgstr "- Ignorados sin mapeo: %d"
+
+msgid "- Revisões ignoradas: %d"
+msgstr "- Revisiones ignoradas: %d"
+
+msgid "- Drafts ignorados: %d"
+msgstr "- Borradores ignorados: %d"
+
+msgid "- Erros reais: %d"
+msgstr "- Errores reales: %d"
+
+msgid "Galeria NGG #%d "%s" já migrada — ignorada (dup_mode=ignore)."
+msgstr "Galería NGG #%d "%s" ya migrada — ignorada (dup_mode=ignore)."
+
+msgid "Galeria "%s" (NGG #%d) sobreescrita → MLGP #%d."
+msgstr "Galería "%s" (NGG #%d) sobrescrita → MLGP #%d."
+
+msgid "Galeria "%s" (NGG #%d) → MLGP #%d"
+msgstr "Galería "%s" (NGG #%d) → MLGP #%d"
+
+msgid "Falha ao criar galeria NGG #%d: %s"
+msgstr "Fallo al crear la galería NGG #%d: %s"
+
+msgid "%d entrada"
+msgstr "%d entrada"
+
+msgid "%d entradas"
+msgstr "%d entradas"
+
+msgid "✅ NextGEN Gallery detectado."
+msgstr "✅ NextGEN Gallery detectado."
+
+msgid "Tabelas: %s"
+msgstr "Tablas: %s"
+
+msgid "Plugin ativo: %s"
+msgstr "Plugin activo: %s"
+
+msgid "SIM"
+msgstr "SÍ"
+
+msgid "NÃO"
+msgstr "NO"
+
+msgid "Tabelas encontradas: %s"
+msgstr "Tablas encontradas: %s"
+
+msgid "Tabelas ausentes: %s"
+msgstr "Tablas ausentes: %s"
+
+msgid "nenhuma"
+msgstr "ninguna"
+
+msgid "BD: %s"
+msgstr "BD: %s"
