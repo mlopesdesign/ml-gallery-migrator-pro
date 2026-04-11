@@ -1,0 +1,32 @@
+# WordPress
+wp-config.php
+wp-content/uploads/
+wp-content/blogs.dir/
+wp-content/upgrade/
+wp-content/backup-db/
+wp-content/advanced-cache.php
+wp-content/cache/
+wp-content/object-cache.php
+wp-content/gallery/
+wp-content/ml-gallery/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Plugin Build Assets
+*.zip
+_make_zip.py
+_make_langs.py
+build*.sh
+release.ps1
+
+# Docker
+docker-compose.yml
+Dockerfile
