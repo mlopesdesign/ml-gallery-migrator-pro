@@ -8,6 +8,8 @@
  * Author URI:  https://mlopesdesign.com.br/
  * Text Domain: ml-gallery-migrator-pro
  * Domain Path: /languages
+ * GitHub Plugin URI: mlopesdesign/ml-gallery-migrator-pro
+ * Primary Branch: main
  * Requires at least: 6.0
  * Requires PHP: 7.4
  *
