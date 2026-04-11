@@ -3,7 +3,7 @@
  * Plugin Name: ML Gallery Migrator Pro
  * Plugin URI:  https://tools.mlopesdesign.com.br/
  * Description: Migração robusta do NextGEN Gallery para o ML Gallery Pro. Motor em lotes, logs persistentes, conversão de shortcodes e cópia física de arquivos.
- * Version:     1.0.27
+ * Version:     1.0.28
  * Author:      M Lopes Design
  * Author URI:  https://mlopesdesign.com.br/
  * Text Domain: ml-gallery-migrator-pro
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'MLGMP_VERSION',  '1.0.27' );
+define( 'MLGMP_VERSION',  '1.0.28' );
 define( 'MLGMP_FILE',     __FILE__ );
 define( 'MLGMP_BASENAME', plugin_basename( __FILE__ ) );
 define( 'MLGMP_DIR',      plugin_dir_path( __FILE__ ) );

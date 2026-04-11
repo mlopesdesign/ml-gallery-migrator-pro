@@ -1,5 +1,9 @@
 # Changelog - ML Gallery Migrator Pro
 
+## [1.0.28] - 2026-04-11
+- **TEST**: Controlled release to validate the native GitHub updater flow.
+- **CORE**: No changes to migration or album logic.
+
 ## [1.0.27] - 2026-04-11
 - **FEATURE**: Native update detection and installation via GitHub Releases.
 - **CORE**: Implemented `MLGMP\Updater` class to bridge GitHub API and WordPress update transients.

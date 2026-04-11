@@ -4,7 +4,7 @@ Tags: nextgen gallery, ml gallery, migration, importer, gallery
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.0.27
+Stable tag: 1.0.28
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -32,6 +32,9 @@ Benefícios:
 1.  Dashboard de Migração - Visão geral e controles de processamento.
 
 == Changelog ==
+
+= 1.0.28 =
+* TEST: Release controlada para validação do motor de atualização automática. Sem mudanças no motor de migração.
 
 = 1.0.27 =
 * FEATURE: Implementação de atualizador nativo via GitHub Releases.
