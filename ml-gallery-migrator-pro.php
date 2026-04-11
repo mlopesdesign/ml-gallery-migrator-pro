@@ -3,7 +3,7 @@
  * Plugin Name: ML Gallery Migrator Pro
  * Plugin URI:  https://tools.mlopesdesign.com.br/
  * Description: Migração robusta do NextGEN Gallery para o ML Gallery Pro. Motor em lotes, logs persistentes, conversão de shortcodes e cópia física de arquivos.
- * Version:     1.0.26
+ * Version:     1.0.27
  * Author:      M Lopes Design
  * Author URI:  https://mlopesdesign.com.br/
  * Text Domain: ml-gallery-migrator-pro
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'MLGMP_VERSION',  '1.0.26' );
+define( 'MLGMP_VERSION',  '1.0.27' );
 define( 'MLGMP_FILE',     __FILE__ );
 define( 'MLGMP_BASENAME', plugin_basename( __FILE__ ) );
 define( 'MLGMP_DIR',      plugin_dir_path( __FILE__ ) );
@@ -36,6 +36,7 @@ require_once MLGMP_DIR . 'includes/class-shortcode-converter.php';
 require_once MLGMP_DIR . 'includes/class-migrator.php';
 require_once MLGMP_DIR . 'includes/class-admin.php';
 require_once MLGMP_DIR . 'includes/class-ajax.php';
+require_once MLGMP_DIR . 'includes/class-updater.php';
 
 register_activation_hook( __FILE__, [ 'MLGMP\\Installer', 'activate' ] );
 register_deactivation_hook( __FILE__, [ 'MLGMP\\Installer', 'deactivate' ] );
@@ -45,4 +46,10 @@ add_action( 'plugins_loaded', static function () {
 	
 	\MLGMP\Admin::instance()->boot();
 	\MLGMP\Ajax::instance()->boot();
+
+	// Initialize GitHub Updater
+	if ( is_admin() ) {
+		$updater = new \MLGMP\Updater( MLGMP_FILE, MLGMP_VERSION );
+		$updater->boot();
+	}
 } );

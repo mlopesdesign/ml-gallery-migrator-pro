@@ -1,5 +1,11 @@
 # Changelog - ML Gallery Migrator Pro
 
+## [1.0.27] - 2026-04-11
+- **FEATURE**: Native update detection and installation via GitHub Releases.
+- **CORE**: Implemented `MLGMP\Updater` class to bridge GitHub API and WordPress update transients.
+- **SECURITY**: Forced TLS 1.2 for all update check requests to GitHub.
+- **DOCS**: Added update-related headers to the main plugin file.
+
 ## [1.0.26] - 2026-04-11
 - **RELEASE**: Final preparation for public repository.
 - **SECURITY**: Hardened capability checks and nonce verification across all endpoints.
