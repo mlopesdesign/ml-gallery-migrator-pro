@@ -48,6 +48,9 @@ final class Migrator {
 	/** @var string ID map table. */
 	private string $map;
 
+	/** @var array<string,true>|null Cached gallery_items table columns. */
+	private ?array $gallery_item_columns = null;
+
 	public function __construct() {
 		global $wpdb;
 		$this->state  = State::get();
@@ -935,9 +938,9 @@ final class Migrator {
 	 */
 	private function insert_gallery_item( array $data ) {
 		global $wpdb;
-		$now = current_time( 'mysql' );
+		$now     = current_time( 'mysql' );
+		$columns = $this->get_gallery_item_columns();
 
-		// Diagnóstico pré-insert.
 		$this->log->debug(
 			sprintf(
 				'INSERT gallery_item: tabela=%s gallery_id=%d file=%s',
@@ -947,68 +950,124 @@ final class Migrator {
 			)
 		);
 
-		// Campos mínimos compatíveis com todas as versões do MLGP.
-		// Inclui source_pid para evitar conflito de chaves únicas em tabelas preparadas.
-		$fields = [
-			'gallery_id'    => (int) $data['gallery_id'],
-			'source_pid'    => (int) ( $data['source_pid'] ?? 0 ),
-			'file_path'     => (string) $data['file_path'],
-			'file_url'      => (string) $data['file_url'],
-			'thumb_path'    => (string) $data['thumb_path'],
-			'thumb_url'     => (string) $data['thumb_url'],
-			'file_name'     => (string) $data['filename'],
-			'original_name' => (string) $data['filename'],
-			'mime_type'     => (string) $data['mime_type'],
-			'width'         => (int) $data['width'],
-			'height'        => (int) $data['height'],
-			'item_title'    => (string) ( $data['title']   ?? '' ),
-			'item_caption'  => (string) ( $data['caption'] ?? '' ),
-			'item_alt'      => (string) ( $data['alt']     ?? '' ),
-			'sort_order'    => (int) $data['sort_order'],
-			'is_visible'    => 1,
-			'created_at'    => $now,
-			'updated_at'    => $now,
+		$file_size = 0;
+		if ( ! empty( $data['file_path'] ) && file_exists( (string) $data['file_path'] ) ) {
+			$file_size = (int) filesize( (string) $data['file_path'] );
+		}
+
+		$candidates = [
+			'gallery_id'    => [ (int) $data['gallery_id'], '%d' ],
+			'source_pid'    => [ (int) ( $data['source_pid'] ?? 0 ), '%d' ],
+			'attachment_id' => [ 0, '%d' ],
+			'storage'       => [ 'local', '%s' ],
+			'file_path'     => [ (string) $data['file_path'], '%s' ],
+			'file_url'      => [ (string) $data['file_url'], '%s' ],
+			'thumb_path'    => [ (string) $data['thumb_path'], '%s' ],
+			'thumb_url'     => [ (string) $data['thumb_url'], '%s' ],
+			'medium_path'   => [ '', '%s' ],
+			'medium_url'    => [ '', '%s' ],
+			'large_path'    => [ '', '%s' ],
+			'large_url'     => [ '', '%s' ],
+			'file_name'     => [ (string) $data['filename'], '%s' ],
+			'original_name' => [ (string) $data['filename'], '%s' ],
+			'mime_type'     => [ (string) $data['mime_type'], '%s' ],
+			'width'         => [ (int) $data['width'], '%d' ],
+			'height'        => [ (int) $data['height'], '%d' ],
+			'file_size'     => [ $file_size, '%d' ],
+			'item_title'    => [ (string) ( $data['title'] ?? '' ), '%s' ],
+			'item_caption'  => [ (string) ( $data['caption'] ?? '' ), '%s' ],
+			'item_alt'      => [ (string) ( $data['alt'] ?? '' ), '%s' ],
+			'item_link'     => [ '', '%s' ],
+			'item_tags'     => [ '', '%s' ],
+			'sort_order'    => [ (int) $data['sort_order'], '%d' ],
+			'is_visible'    => [ 1, '%d' ],
+			'created_at'    => [ $now, '%s' ],
+			'updated_at'    => [ $now, '%s' ],
 		];
 
-		$formats = [
-			'%d', '%d', '%s', '%s', '%s', '%s',
-			'%s', '%s', '%s',
-			'%d', '%d',
-			'%s', '%s', '%s',
-			'%d', '%d',
-			'%s', '%s',
-		];
+		$fields  = [];
+		$formats = [];
+		foreach ( $candidates as $column => $payload ) {
+			if ( isset( $columns[ $column ] ) ) {
+				$fields[ $column ] = $payload[0];
+				$formats[]         = $payload[1];
+			}
+		}
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$existing_id = $this->find_existing_gallery_item( $data, $columns );
+		if ( $existing_id > 0 ) {
+			if ( ( $this->state['duplicate_mode'] ?? 'ignore' ) === 'overwrite' ) {
+				$update_fields = $fields;
+				unset( $update_fields['created_at'] );
+				$wpdb->update( $this->ti, $update_fields, [ 'id' => $existing_id ] );
+				return [ 'id' => $existing_id, 'status' => 'updated' ];
+			}
+			return [ 'id' => $existing_id, 'status' => 'skipped' ];
+		}
+
 		$result = $wpdb->insert( $this->ti, $fields, $formats );
-
 		if ( false === $result ) {
 			$db_error = $wpdb->last_error;
-			if ( stripos( $db_error, 'Duplicate entry' ) !== false && stripos( $db_error, 'uniq_gallery_source_pid' ) !== false ) {
-				// Localiza o ID existente
-				$existing_id = (int) $wpdb->get_var( $wpdb->prepare(
-					"SELECT id FROM {$this->ti} WHERE gallery_id = %d AND source_pid = %d",
-					$data['gallery_id'],
-					$data['source_pid']
-				) );
-
-				if ( $existing_id > 0 ) {
-					if ( ($this->state['duplicate_mode'] ?? 'ignore') === 'overwrite' ) {
-						// Sobrescreve (atualiza tudo menos criado_em e chaves únicas)
-						unset($fields['created_at']);
-						$wpdb->update( $this->ti, $fields, [ 'id' => $existing_id ] );
-						return [ 'id' => $existing_id, 'status' => 'updated' ];
-					}
-					return [ 'id' => $existing_id, 'status' => 'skipped' ];
-				}
-			}
-
-			// Loga o erro real do MySQL.
 			$this->log->error( 'DB insert_gallery_item: ' . $db_error );
 			return 0;
 		}
 
 		return [ 'id' => (int) $wpdb->insert_id, 'status' => 'inserted' ];
+	}
+
+	/**
+	 * @return array<string,true>
+	 */
+	private function get_gallery_item_columns(): array {
+		global $wpdb;
+		if ( null !== $this->gallery_item_columns ) {
+			return $this->gallery_item_columns;
+		}
+		$this->gallery_item_columns = [];
+		$results = $wpdb->get_results( 'SHOW COLUMNS FROM ' . $this->ti, ARRAY_A ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.PreparedSQL.NotPrepared
+		foreach ( (array) $results as $row ) {
+			if ( ! empty( $row['Field'] ) ) {
+				$this->gallery_item_columns[ (string) $row['Field'] ] = true;
+			}
+		}
+		return $this->gallery_item_columns;
+	}
+
+	private function find_existing_gallery_item( array $data, array $columns ): int {
+		global $wpdb;
+		$gallery_id = (int) $data['gallery_id'];
+		$source_pid = (int) ( $data['source_pid'] ?? 0 );
+		$filename   = (string) $data['filename'];
+		$file_path  = (string) $data['file_path'];
+
+		if ( $source_pid > 0 && isset( $columns['source_pid'] ) ) {
+			return (int) $wpdb->get_var( $wpdb->prepare(
+				"SELECT id FROM {$this->ti} WHERE gallery_id = %d AND source_pid = %d LIMIT 1",
+				$gallery_id,
+				$source_pid
+			) );
+		}
+
+		if ( isset( $columns['file_path'] ) && '' !== $file_path ) {
+			$existing_id = (int) $wpdb->get_var( $wpdb->prepare(
+				"SELECT id FROM {$this->ti} WHERE gallery_id = %d AND file_path = %s LIMIT 1",
+				$gallery_id,
+				$file_path
+			) );
+			if ( $existing_id > 0 ) {
+				return $existing_id;
+			}
+		}
+
+		if ( isset( $columns['file_name'] ) && '' !== $filename ) {
+			return (int) $wpdb->get_var( $wpdb->prepare(
+				"SELECT id FROM {$this->ti} WHERE gallery_id = %d AND file_name = %s LIMIT 1",
+				$gallery_id,
+				$filename
+			) );
+		}
+
+		return 0;
 	}
 
 	// -----------------------------------------------------------------------

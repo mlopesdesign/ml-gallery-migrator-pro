@@ -44,8 +44,8 @@ final class Admin {
 			'manage_options',
 			MLGMP_SLUG,
 			[ $this, 'render_page' ],
-			'dashicons-migration',
-			80
+			'dashicons-format-gallery',
+			58.7
 		);
 	}
 
