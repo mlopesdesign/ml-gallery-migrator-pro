@@ -65,6 +65,57 @@ final class Migrator {
 		$this->map = Installer::tables()['id_map'];
 	}
 
+	private function source(): string {
+		return ( isset( $this->state['source'] ) && 'photo_gallery' === $this->state['source'] ) ? 'photo_gallery' : 'ngg';
+	}
+
+	private function source_label(): string {
+		return 'photo_gallery' === $this->source() ? 'Photo Gallery' : 'NGG';
+	}
+
+	private function count_all(): array {
+		return 'photo_gallery' === $this->source() ? PhotoGalleryReader::count_all() : NGGReader::count_all();
+	}
+
+	private function get_galleries_batch( int $cursor, int $batch_size ): array {
+		return 'photo_gallery' === $this->source() ? PhotoGalleryReader::get_galleries_batch( $cursor, $batch_size ) : NGGReader::get_galleries_batch( $cursor, $batch_size );
+	}
+
+	private function get_albums_batch( int $cursor, int $batch_size ): array {
+		return 'photo_gallery' === $this->source() ? PhotoGalleryReader::get_albums_batch( $cursor, $batch_size ) : NGGReader::get_albums_batch( $cursor, $batch_size );
+	}
+
+	private function get_album_typed_items( array $row ): array {
+		return 'photo_gallery' === $this->source() ? PhotoGalleryReader::get_album_items( (int) $row['id'] ) : NGGReader::parse_album_sortorder( (string) $row['sortorder'] );
+	}
+
+	private function get_images_batch( int $cursor, int $batch_size ): array {
+		return 'photo_gallery' === $this->source() ? PhotoGalleryReader::get_images_batch( $cursor, $batch_size ) : NGGReader::get_images_batch( $cursor, $batch_size );
+	}
+
+	private function get_picture_by_pid( int $pid ): ?array {
+		return 'photo_gallery' === $this->source() ? PhotoGalleryReader::get_picture_by_pid( $pid ) : NGGReader::get_picture_by_pid( $pid );
+	}
+
+	private function resolve_image_abspath( array $row ): string {
+		return 'photo_gallery' === $this->source() ? PhotoGalleryReader::resolve_image_abspath( $row ) : NGGReader::resolve_image_abspath( $row );
+	}
+
+	private function resolve_thumbs_dir( array $row ): string {
+		if ( 'photo_gallery' === $this->source() ) {
+			return PhotoGalleryReader::resolve_thumbs_dir_abspath( $row );
+		}
+		return NGGReader::resolve_thumbs_dir_abspath( (string) $row['path'] );
+	}
+
+	private function resolve_preview_pid( array $row, string $type = 'gallery' ): int {
+		if ( 'photo_gallery' !== $this->source() ) {
+			return (int) ( $row['previewpic'] ?? 0 );
+		}
+		$preview = (string) ( $row['preview_image'] ?? $row['random_preview_image'] ?? '' );
+		return PhotoGalleryReader::find_preview_pid( $preview, (int) ( $row['id'] ?? 0 ), $type );
+	}
+
 	// -----------------------------------------------------------------------
 	// Public API — called from AJAX handler
 	// -----------------------------------------------------------------------
@@ -185,18 +236,18 @@ final class Migrator {
 		$dup_mode   = $state['duplicate_mode'] ?? 'ignore';
 		$processed  = 0;
 
-		$rows = NGGReader::get_galleries_batch( $cursor, $batch_size );
+		$rows = $this->get_galleries_batch( $cursor, $batch_size );
 
 		if ( empty( $rows ) ) {
 			return 0;
 		}
 
 		foreach ( $rows as $ngg ) {
-			// ngg_gallery usa gid como chave primária (não galleryid).
-			$ngg_id = (int) $ngg['gid'];
+			$source_is_photo = 'photo_gallery' === $this->source();
+			$ngg_id = (int) ( $source_is_photo ? ( $ngg['id'] ?? 0 ) : ( $ngg['gid'] ?? 0 ) );
 			$cursor = max( $cursor, $ngg_id );
-			$slug   = $this->unique_slug( sanitize_title( $ngg['name'] ?: $ngg['title'] ?: 'galeria-' . $ngg_id ), 'gallery' );
-			$title  = ! empty( $ngg['title'] ) ? $ngg['title'] : $ngg['name'];
+			$slug   = $this->unique_slug( sanitize_title( $ngg['slug'] ?? $ngg['name'] ?? $ngg['title'] ?? 'galeria-' . $ngg_id ), 'gallery' );
+			$title  = ! empty( $ngg['title'] ) ? $ngg['title'] : ( $ngg['name'] ?? ( 'Galeria ' . $ngg_id ) );
 
 			$existing = $this->already_mapped( 'gallery', $ngg_id );
 
@@ -219,7 +270,7 @@ final class Migrator {
 				continue;
 			}
 
-			$mlgp_id = $this->insert_gallery( $title, $slug, (int) $ngg['previewpic'] );
+			$mlgp_id = $this->insert_gallery( $title, $slug, $this->resolve_preview_pid( $ngg, 'gallery' ) );
 
 			if ( $mlgp_id ) {
 				$this->persist_map( 'gallery', $ngg_id, $mlgp_id );
@@ -247,7 +298,7 @@ final class Migrator {
 		$batch_size = (int) $state['batch_size'];
 		$processed  = 0;
 
-		$rows = NGGReader::get_albums_batch( $cursor, $batch_size );
+		$rows = $this->get_albums_batch( $cursor, $batch_size );
 
 		if ( empty( $rows ) ) {
 			return 0;
@@ -261,7 +312,7 @@ final class Migrator {
 			$mlgp_id = $this->get_mapped_dest( 'album', $ngg_id );
 			
 			if ( $mlgp_id ) {
-				$typed_items = NGGReader::parse_album_sortorder( (string) $ngg['sortorder'] );
+				$typed_items = $this->get_album_typed_items( $ngg );
 				$this->rewire_album_galleries( $mlgp_id, $typed_items );
 				$this->log->info( "Álbum '{$title}' (NGG #{$ngg_id}) rewire (Passo 2) concluído. Itens processados na estrutura." );
 				State::inc( $state, 'processed' );
@@ -285,7 +336,7 @@ final class Migrator {
 		$dup_mode   = $state['duplicate_mode'] ?? 'ignore';
 		$processed  = 0;
 
-		$rows = NGGReader::get_albums_batch( $cursor, $batch_size );
+		$rows = $this->get_albums_batch( $cursor, $batch_size );
 
 		if ( empty( $rows ) ) {
 			return 0;
@@ -317,12 +368,25 @@ final class Migrator {
 				continue;
 			}
 
+			// Anti-duplication: check if equivalent album already exists in destination.
+			$base_slug_alb = sanitize_title( $ngg['name'] ?: 'album-' . $ngg_id );
+			$reuse_alb_id  = $this->find_dest_album_reuse( $title, $base_slug_alb );
+
+			if ( $reuse_alb_id > 0 ) {
+				$this->persist_map( 'album', $ngg_id, $reuse_alb_id );
+				State::inc( $state, 'processed' );
+				$processed++;
+				$this->log->info( "Álbum '{$title}' (NGG #{$ngg_id}) reutilizado → MLGP #{$reuse_alb_id} (evitou duplicata)." );
+				$state['cursors'][ State::STAGE_ALBUMS ] = $cursor;
+				continue;
+			}
+
 			// Novo álbum
 			$mlgp_id = $this->insert_album( $title, $slug );
 
 			if ( $mlgp_id ) {
 				// Cover image.
-				$preview_pid = (int) $ngg['previewpic'];
+				$preview_pid = $this->resolve_preview_pid( $ngg, 'album' );
 				if ( $preview_pid > 0 ) {
 					$this->stash_album_cover( $mlgp_id, $preview_pid );
 				}
@@ -354,7 +418,7 @@ final class Migrator {
 		$batch_size = (int) $state['batch_size'];
 		$processed  = 0;
 
-		$rows = NGGReader::get_images_batch( $cursor, $batch_size );
+		$rows = $this->get_images_batch( $cursor, $batch_size );
 
 		if ( empty( $rows ) ) {
 			return 0;
@@ -373,7 +437,7 @@ final class Migrator {
 			}
 
 			// Resolve source.
-			$src_abs = NGGReader::resolve_image_abspath( $ngg );
+			$src_abs = $this->resolve_image_abspath( $ngg );
 
 			if ( ! file_exists( $src_abs ) ) {
 				State::inc( $state, 'orphans' );
@@ -402,7 +466,7 @@ final class Migrator {
 			$gallery_slug = $this->get_gallery_slug( $mlgp_gal_id );
 
 			// Copy physical file.
-			$copy_result = $this->copier->copy_image( $ngg, $gallery_slug );
+			$copy_result = $this->copier->copy_image( $ngg, $gallery_slug, $this->source() );
 
 			if ( ! $copy_result['copied'] ) {
 				State::inc( $state, 'errors' );
@@ -453,6 +517,10 @@ final class Migrator {
 					$processed++;
 					$this->log->debug( "[Ponteiro avança: {$cursor}] Imagem pid={$ngg_pid} (gallery_id={$mlgp_gal_id}) INSERIDA → item #{$item_id}" );
 				}
+
+				if ( ! empty( $copy_result['thumb_copied'] ) ) {
+					$state['counters'][ State::STAGE_THUMBS ]['processed'] = (int) ( $state['counters'][ State::STAGE_THUMBS ]['processed'] ?? 0 ) + 1;
+				}
 			} else {
 				global $wpdb;
 				$db_err = $wpdb->last_error ?: '(sem detalhe — verifique colunas da tabela ' . $this->ti . ')';
@@ -482,14 +550,14 @@ final class Migrator {
 		global $wpdb;
 
 		// Iteramos sobre as GALERIAS para copiar as pastas de thumbs de uma vez.
-		$galleries = NGGReader::get_galleries_batch( $cursor, $batch_size );
+		$galleries = $this->get_galleries_batch( $cursor, $batch_size );
 
 		if ( empty( $galleries ) ) {
 			return 0;
 		}
 
 		foreach ( $galleries as $ngg ) {
-			$ngg_id = (int) $ngg['gid'];
+			$ngg_id = (int) ( 'photo_gallery' === $this->source() ? ( $ngg['id'] ?? 0 ) : ( $ngg['gid'] ?? 0 ) );
 			$cursor = max( $cursor, $ngg_id );
 			$title  = $ngg['title'] ?: $ngg['name'];
 			
@@ -504,7 +572,7 @@ final class Migrator {
 			$slug = $this->get_gallery_slug( $mlgp_gal_id );
 
 			// 2. Localiza a pasta de origem NGG.
-			$src_thumbs_dir = NGGReader::resolve_thumbs_dir_abspath( (string) $ngg['path'] );
+			$src_thumbs_dir = $this->resolve_thumbs_dir( $ngg );
 			
 			if ( ! is_dir( $src_thumbs_dir ) ) {
 				$this->log->error( "[thumbs] Galeria '{$title}' → Pasta /thumbs não encontrada na origem: {$src_thumbs_dir}" );
@@ -1249,7 +1317,85 @@ final class Migrator {
 	// Slug helpers
 	// -----------------------------------------------------------------------
 
-	private function unique_slug( string $base, string $type ): string {
+	// -----------------------------------------------------------------------
+	// Idempotency helpers — destination-level deduplication
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Finds an existing mlgp_gallery with the same title OR base slug.
+	 * Used to reuse destination objects instead of creating duplicates on rerun.
+	 *
+	 * @param string $title     Source gallery title.
+	 * @param string $base_slug Sanitized slug base (before unique_slug suffix).
+	 * @return int Destination gallery id if found, 0 otherwise.
+	 */
+	private function find_dest_gallery_reuse( string $title, string $base_slug ): int {
+		global $wpdb;
+		if ( ! $title && ! $base_slug ) {
+			return 0;
+		}
+		// Try exact title match first.
+		if ( $title ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$id = (int) $wpdb->get_var( $wpdb->prepare(
+				"SELECT id FROM {$this->tg} WHERE title = %s LIMIT 1",
+				$title
+			) );
+			if ( $id > 0 ) {
+				return $id;
+			}
+		}
+		// Try exact slug match.
+		if ( $base_slug ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$id = (int) $wpdb->get_var( $wpdb->prepare(
+				"SELECT id FROM {$this->tg} WHERE slug = %s LIMIT 1",
+				$base_slug
+			) );
+			if ( $id > 0 ) {
+				return $id;
+			}
+		}
+		return 0;
+	}
+
+	/**
+	 * Finds an existing mlgp_album with the same title OR base slug.
+	 * Used to reuse destination objects instead of creating duplicates on rerun.
+	 *
+	 * @param string $title     Source album title.
+	 * @param string $base_slug Sanitized slug base.
+	 * @return int Destination album id if found, 0 otherwise.
+	 */
+	private function find_dest_album_reuse( string $title, string $base_slug ): int {
+		global $wpdb;
+		if ( ! $title && ! $base_slug ) {
+			return 0;
+		}
+		if ( $title ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$id = (int) $wpdb->get_var( $wpdb->prepare(
+				"SELECT id FROM {$this->ta} WHERE title = %s LIMIT 1",
+				$title
+			) );
+			if ( $id > 0 ) {
+				return $id;
+			}
+		}
+		if ( $base_slug ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$id = (int) $wpdb->get_var( $wpdb->prepare(
+				"SELECT id FROM {$this->ta} WHERE slug = %s LIMIT 1",
+				$base_slug
+			) );
+			if ( $id > 0 ) {
+				return $id;
+			}
+		}
+		return 0;
+	}
+
+		private function unique_slug( string $base, string $type ): string {
 		global $wpdb;
 		$table = 'gallery' === $type ? $this->tg : $this->ta;
 		$slug  = $base;
@@ -1312,32 +1458,34 @@ final class Migrator {
 	// Analysis (called before migration starts)
 	// -----------------------------------------------------------------------
 
-	public static function analyse(): array {
-		$detection = NGGReader::detect();
+	public static function analyse( string $source = 'ngg' ): array {
+		$source    = 'photo_gallery' === $source ? 'photo_gallery' : 'ngg';
+		$detection = 'photo_gallery' === $source ? PhotoGalleryReader::detect() : NGGReader::detect();
+		$label     = 'photo_gallery' === $source ? 'Photo Gallery' : 'NextGEN Gallery';
 
 		// Need a session_id for logging — use existing or create temp.
 		$state      = State::get();
 		$session_id = $state['session_id'] ?: 'analyse-' . time();
 		$log        = new Logger( $session_id, 'analyse' );
 
-		$log->info( 'Plugin NGG ativo: ' . ( $detection['plugin_active'] ? 'SIM' : 'NÃO' ) );
-		$log->info( 'Tabelas NGG encontradas: ' . ( $detection['tables_found'] ? implode( ', ', $detection['tables_found'] ) : 'NENHUMA' ) );
+		$log->info( 'Plugin ' . $label . ' ativo: ' . ( $detection['plugin_active'] ? 'SIM' : 'NÃO' ) );
+		$log->info( 'Tabelas ' . $label . ' encontradas: ' . ( $detection['tables_found'] ? implode( ', ', $detection['tables_found'] ) : 'NENHUMA' ) );
 
 		if ( $detection['tables_missing'] ) {
-			$log->warning( 'Tabelas NGG ausentes: ' . implode( ', ', $detection['tables_missing'] ) );
+			$log->warning( 'Tabelas ausentes: ' . implode( ', ', $detection['tables_missing'] ) );
 		}
 
-		$ngg_ok = ! empty( $detection['tables_found'] ) || $detection['plugin_active'];
+		$source_ok = ! empty( $detection['tables_found'] ) || $detection['plugin_active'];
 
-		if ( ! $ngg_ok ) {
-			$msg = 'NextGEN Gallery não detectado. Plugin ativo: '
+		if ( ! $source_ok ) {
+			$msg = $label . ' não detectado. Plugin ativo: '
 			     . ( $detection['plugin_active'] ? 'SIM' : 'NÃO' )
 			     . ' | Tabelas: nenhuma encontrada no banco "' . $detection['db_name'] . '"';
 			$log->error( $msg );
 			return [ 'error' => $msg ];
 		}
 
-		$counts = NGGReader::count_all();
+		$counts = ( 'photo_gallery' === $source ? PhotoGalleryReader::count_all() : NGGReader::count_all() );
 		$log->info( sprintf(
 			'Acervo: %d galeria(s), %d álbum(ns), %d imagem(ns), %d shortcode(s).',
 			$counts['galleries'],

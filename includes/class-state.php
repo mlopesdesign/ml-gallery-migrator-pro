@@ -78,6 +78,11 @@ final class State {
 			'started_at'      => '',
 			'updated_at'      => '',
 			'analysis'        => null,
+			'analyses'        => [
+				'ngg'           => null,
+				'photo_gallery' => null,
+			],
+			'source'          => 'ngg',
 			// Etapas habilitadas: todas ativas por padrão.
 			'stages_enabled'  => [
 				self::STAGE_GALLERIES     => true,
@@ -191,6 +196,9 @@ final class State {
 		if ( isset( $params['duplicate_mode'] ) && in_array( $params['duplicate_mode'], [ 'ignore', 'overwrite' ], true ) ) {
 			$state['duplicate_mode'] = $params['duplicate_mode'];
 		}
+		if ( isset( $params['source'] ) && in_array( $params['source'], [ 'ngg', 'photo_gallery' ], true ) ) {
+			$state['source'] = $params['source'];
+		}
 	}
 
 	public static function generate_session_id(): string {
@@ -221,11 +229,19 @@ final class State {
 		$state['counters'][ $stage ][ $counter ] = ( $state['counters'][ $stage ][ $counter ] ?? 0 ) + $amount;
 	}
 
-	/** Total processed across all stages. */
+	/** Total processed for UI/progress, using the same stages represented in totals. */
 	public static function total_processed( array $state ): int {
+		$progress_stages = [
+			self::STAGE_GALLERIES,
+			self::STAGE_ALBUMS,
+			self::STAGE_IMAGES,
+			self::STAGE_THUMBS,
+			self::STAGE_SHORTCODES,
+		];
+
 		$n = 0;
-		foreach ( $state['counters'] as $c ) {
-			$n += (int) ( $c['processed'] ?? 0 );
+		foreach ( $progress_stages as $stage ) {
+			$n += (int) ( $state['counters'][ $stage ]['processed'] ?? 0 );
 		}
 		return $n;
 	}
