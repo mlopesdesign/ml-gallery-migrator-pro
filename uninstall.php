@@ -19,8 +19,9 @@ global $wpdb;
  * 1. Remove database tables
  */
 $tables = [
-	$wpdb->prefix . 'ml_gallery_migration_map',
-	$wpdb->prefix . 'ml_gallery_migration_logs',
+	// Nomes reais criados por includes/class-installer.php (antes a lista tinha nomes inexistentes).
+	$wpdb->prefix . 'mlgmp_migration_log',
+	$wpdb->prefix . 'mlgmp_id_map',
 ];
 
 foreach ( $tables as $table ) {
@@ -35,11 +36,14 @@ $options = [
 	'mlgmp_state',
 	'mlgmp_pending_gallery_covers',
 	'mlgmp_pending_album_covers',
+	'mlgmp_version',
 ];
 
 foreach ( $options as $option ) {
 	delete_option( $option );
 }
+delete_site_transient( 'mlgmp_github_release_v2' );
+delete_site_transient( 'mlgmp_github_release_latest' );
 
 /**
  * 3. Note: We DO NOT remove physical files in /wp-content/ml-gallery/
