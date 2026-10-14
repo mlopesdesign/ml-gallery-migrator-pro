@@ -116,9 +116,19 @@ final class Ajax {
 	// -----------------------------------------------------------------------
 
 	private function handle_analyse(): void {
-		$result = Migrator::analyse();
+		$params = $this->get_ui_params();
+		$source = isset( $params['source'] ) ? $params['source'] : ( State::get()['source'] ?? 'ngg' );
+		$result = Migrator::analyse( $source );
 		$state  = State::get();
 		$state['analysis'] = $result;
+		if ( empty( $state['analyses'] ) || ! is_array( $state['analyses'] ) ) {
+			$state['analyses'] = [
+				'ngg'           => null,
+				'photo_gallery' => null,
+			];
+		}
+		$state['analyses'][ $source ] = $result;
+		$state['source']   = $source;
 		if ( isset( $result['galleries'] ) ) {
 			$state['totals'] = [
 				'galleries'  => (int) $result['galleries'],
@@ -133,16 +143,41 @@ final class Ajax {
 	}
 
 	private function handle_start(): void {
-		$state  = State::get();
-		$params = $this->get_ui_params();
+		$state = State::get();
 
-		// Validação: pelo menos uma etapa selecionada.
-		$enabled_stages = array_keys( array_filter( $params['stages_enabled'] ?? [] ) );
+		// Configuration comes ONLY from saved settings (mlgmp_settings).
+		// batch_size, stages_enabled and duplicate_mode are NOT read from POST/UI.
+		$settings = Config::get_all();
+		$params   = [];
+
+		$params['batch_size']     = (int) $settings['batch_size'];
+		$params['duplicate_mode'] = (string) $settings['duplicate_mode'];
+
+		// Build stages_enabled from persisted config.
+		$config_stages  = is_array( $settings['enabled_stages'] ) ? $settings['enabled_stages'] : [];
+		$all_stages     = [ 'galleries', 'albums', 'images', 'thumbs', 'shortcodes' ];
+		$stages_enabled = [];
+		foreach ( $all_stages as $s ) {
+			$stages_enabled[ $s ] = ! empty( $config_stages[ $s ] );
+		}
+		$params['stages_enabled'] = $stages_enabled;
+
+		// Source and mode are UI/session concerns, not persistent config.
+		$ui = $this->get_ui_params();
+		if ( ! empty( $ui['source'] ) ) {
+			$params['source'] = $ui['source'];
+		}
+		if ( ! empty( $ui['mode'] ) ) {
+			$params['mode'] = $ui['mode'];
+		}
+
+		// Validacao: pelo menos uma etapa selecionada.
+		$enabled_stages = array_keys( array_filter( $params['stages_enabled'] ) );
 		if ( empty( $enabled_stages ) ) {
 			wp_send_json_error( [ 'message' => __( 'Selecione pelo menos uma etapa para iniciar a migração.', 'ml-gallery-migrator-pro' ) ], 400 );
 		}
 
-		// Se já estiver em meio a uma sessão READY (single batch), apenas retoma mantendo cursores.
+		// Se ja estiver em meio a uma sessao READY (single batch), apenas retoma mantendo cursores.
 		if ( $state['status'] === State::STATUS_READY ) {
 			$state = State::resume_from_ready( $state, $params );
 			$log   = new Logger( $state['session_id'], $state['current_stage'] );
@@ -151,19 +186,19 @@ final class Ajax {
 			return;
 		}
 
-		// Caso contrário (IDLE, DONE, CANCELLED), começamos um "novo" ciclo de cursores 
-		// mas preservando contadores totais conforme pedido pelo usuário.
-		
+		// Caso contrario (IDLE, DONE, CANCELLED), comecamos um "novo" ciclo de cursores
+		// mas preservando contadores totais conforme pedido pelo usuario.
+
 		if ( $state['status'] === State::STATUS_RUNNING || $state['status'] === State::STATUS_PAUSED ) {
 			wp_send_json_error( [ 'message' => __( 'Migração já em curso ou pausada. Use Retomar.', 'ml-gallery-migrator-pro' ) ], 400 );
 		}
 
-		// Se não houver sessão ativa, gera uma.
+		// Se nao houver sessao ativa, gera uma.
 		if ( empty( $state['session_id'] ) ) {
 			$state = State::reset();
 		} else {
 			// Reinicia cursores para permitir re-passagem (ex: overwrite ou novas imagens).
-			// Mas mantemos os números de processados/erros/etc do histórico.
+			// Mas mantemos os numeros de processados/erros/etc do historico.
 			$state['current_stage'] = State::STAGE_GALLERIES;
 			foreach ( $state['cursors'] as $k => $v ) {
 				$state['cursors'][ $k ] = 0;
@@ -187,7 +222,7 @@ final class Ajax {
 	}
 
 	/**
-	 * Chamado pelo JS após 1 lote em modo single.
+	 * Chamado pelo JS apos 1 lote em modo single.
 	 * Seta status = READY (preserva cursores/contadores).
 	 */
 	private function handle_ready(): void {
@@ -252,8 +287,29 @@ final class Ajax {
 			wp_send_json_error( [ 'message' => 'Not paused' ], 400 );
 		}
 
-		$params = $this->get_ui_params();
-		$state  = State::resume_from_ready( $state, $params );
+		// Configuration comes ONLY from saved settings (mlgmp_settings).
+		// batch_size, stages_enabled and duplicate_mode are NOT read from POST/UI.
+		$settings = Config::get_all();
+		$params   = [];
+
+		$params['batch_size']     = (int) $settings['batch_size'];
+		$params['duplicate_mode'] = (string) $settings['duplicate_mode'];
+
+		$config_stages  = is_array( $settings['enabled_stages'] ) ? $settings['enabled_stages'] : [];
+		$all_stages     = [ 'galleries', 'albums', 'images', 'thumbs', 'shortcodes' ];
+		$stages_enabled = [];
+		foreach ( $all_stages as $s ) {
+			$stages_enabled[ $s ] = ! empty( $config_stages[ $s ] );
+		}
+		$params['stages_enabled'] = $stages_enabled;
+
+		// Mode (single/continuous) is a UI session preference, not persistent config.
+		$ui = $this->get_ui_params();
+		if ( ! empty( $ui['mode'] ) ) {
+			$params['mode'] = $ui['mode'];
+		}
+
+		$state = State::resume_from_ready( $state, $params );
 
 		$log = new Logger( $state['session_id'], $state['current_stage'] );
 		$log->info( sprintf( __( 'Migração retomada. Modo: %1$s, lote: %2$d', 'ml-gallery-migrator-pro' ), $state['mode'], $state['batch_size'] ) );
@@ -262,30 +318,18 @@ final class Ajax {
 	}
 
 	/**
-	 * Helper para extrair parâmetros do UI de forma consistente.
+	 * Helper para extrair parametros do UI.
+	 * Usado apenas para: source, mode.
+	 * batch_size, stages_enabled e duplicate_mode NAO sao lidos daqui para mlgmp_start/mlgmp_resume.
+	 * Esses valores vem exclusivamente de Config::get_all().
 	 */
 	private function get_ui_params(): array {
 		$params = [];
 		if ( isset( $_POST['mode'] ) ) {
 			$params['mode'] = sanitize_key( wp_unslash( $_POST['mode'] ) );
 		}
-		if ( isset( $_POST['batch_size'] ) ) {
-			$params['batch_size'] = absint( wp_unslash( $_POST['batch_size'] ) );
-		}
-		if ( isset( $_POST['duplicate_mode'] ) ) {
-			$params['duplicate_mode'] = sanitize_key( wp_unslash( $_POST['duplicate_mode'] ) );
-		}
-		if ( isset( $_POST['stages_enabled'] ) ) {
-			// Pode vir como array ou JSON dependendo do JS.
-			$raw = wp_unslash( $_POST['stages_enabled'] );
-			$decoded = json_decode( $raw, true );
-			if ( is_array( $decoded ) ) {
-				$params['stages_enabled'] = [];
-				$all = [ 'galleries', 'albums', 'images', 'thumbs', 'shortcodes' ];
-				foreach ( $all as $s ) {
-					$params['stages_enabled'][ $s ] = in_array( $s, $decoded, true );
-				}
-			}
+		if ( isset( $_POST['source'] ) ) {
+			$params['source'] = sanitize_key( wp_unslash( $_POST['source'] ) );
 		}
 		return $params;
 	}

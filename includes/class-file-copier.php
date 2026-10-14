@@ -48,7 +48,7 @@ final class FileCopier {
 	 *   copied: bool, thumb_copied: bool
 	 * }
 	 */
-	public function copy_image( array $picture, string $gallery_slug ): array {
+	public function copy_image( array $picture, string $gallery_slug, string $source = 'ngg' ): array {
 		$result = [
 			'file_path'   => '',
 			'file_url'    => '',
@@ -62,8 +62,13 @@ final class FileCopier {
 		$thumbs_dest  = $this->ensure_thumbs_dir( $gallery_slug );
 
 		$filename      = sanitize_file_name( $picture['filename'] );
-		$src_image     = NGGReader::resolve_image_abspath( $picture );
-		$src_thumb     = NGGReader::resolve_thumb_abspath( $picture );
+		if ( 'photo_gallery' === $source ) {
+			$src_image = PhotoGalleryReader::resolve_image_abspath( $picture );
+			$src_thumb = PhotoGalleryReader::resolve_thumb_abspath( $picture );
+		} else {
+			$src_image = NGGReader::resolve_image_abspath( $picture );
+			$src_thumb = NGGReader::resolve_thumb_abspath( $picture );
+		}
 
 		$dest_image    = $gallery_dest . DIRECTORY_SEPARATOR . $filename;
 		$dest_thumb    = $thumbs_dest  . DIRECTORY_SEPARATOR . 'thumbs_' . $filename;

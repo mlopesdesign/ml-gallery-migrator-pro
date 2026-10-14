@@ -4,7 +4,7 @@ Tags: nextgen, migration, gallery, photography, migrate
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.0.36
+Stable tag: 1.0.68
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -49,6 +49,14 @@ Não. Uma vez que todas as suas galerias e shortcodes foram convertidos para o M
 3. Logs detalhados de cada operação realizada pelo motor.
 
 == Changelog ==
+
+= 1.0.50 =
+* Reliability layer: added read-only source and destination snapshots for safer migration auditing.
+* Reliability layer: added reconciliation summary, integrity status, and final integrity report in the native admin UI.
+* UI: reliability reporting follows the existing ML Gallery Migrator Pro layout pattern without altering the migration engine.
+
+= 1.0.40 =
+* UI (Cleanup Card): lapidação visual final do bloco de limpeza do NGG com botão em linha própria, grade compacta de métricas e melhor equilíbrio comercial no painel.
 
 = 1.0.36 =
 * TEST: Release controlada para validação do motor de atualização automática. Sem mudanças no motor de migração.

@@ -2,8 +2,8 @@
 /**
  * Plugin Name: ML Gallery Migrator Pro
  * Plugin URI:  https://tools.mlopesdesign.com.br/
- * Description: Migração robusta do NextGEN Gallery para o ML Gallery Pro. Motor em lotes, logs persistentes, conversão de shortcodes e cópia física de arquivos.
- * Version:     1.0.36
+ * Description: Migração robusta do NextGEN Gallery e Photo Gallery para o ML Gallery Pro. Motor em lotes, logs persistentes, conversão de shortcodes e cópia física de arquivos.
+ * Version: 1.0.68
  * Author:      M Lopes Design
  * Author URI:  https://mlopesdesign.com.br/
  * Text Domain: ml-gallery-migrator-pro
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'MLGMP_VERSION',  '1.0.36' );
+define( 'MLGMP_VERSION', '1.0.68' );
 define( 'MLGMP_FILE',     __FILE__ );
 define( 'MLGMP_BASENAME', plugin_basename( __FILE__ ) );
 define( 'MLGMP_DIR',      plugin_dir_path( __FILE__ ) );
@@ -31,12 +31,18 @@ require_once MLGMP_DIR . 'includes/class-installer.php';
 require_once MLGMP_DIR . 'includes/class-state.php';
 require_once MLGMP_DIR . 'includes/class-logger.php';
 require_once MLGMP_DIR . 'includes/class-ngg-reader.php';
+require_once MLGMP_DIR . 'includes/class-photo-gallery-reader.php';
 require_once MLGMP_DIR . 'includes/class-file-copier.php';
 require_once MLGMP_DIR . 'includes/class-shortcode-converter.php';
 require_once MLGMP_DIR . 'includes/class-migrator.php';
+require_once MLGMP_DIR . 'includes/class-config.php';
+require_once MLGMP_DIR . 'includes/class-repair.php';
 require_once MLGMP_DIR . 'includes/class-admin.php';
 require_once MLGMP_DIR . 'includes/class-ajax.php';
 require_once MLGMP_DIR . 'includes/class-updater.php';
+require_once MLGMP_DIR . 'includes/class-ngg-cleaner.php';
+require_once MLGMP_DIR . 'includes/class-photo-gallery-cleaner.php';
+require_once MLGMP_DIR . 'includes/class-reliability.php';
 
 register_activation_hook( __FILE__, [ 'MLGMP\\Installer', 'activate' ] );
 register_deactivation_hook( __FILE__, [ 'MLGMP\\Installer', 'deactivate' ] );
@@ -46,6 +52,10 @@ add_action( 'plugins_loaded', static function () {
 	
 	\MLGMP\Admin::instance()->boot();
 	\MLGMP\Ajax::instance()->boot();
+	\MLGMP\Config::instance()->boot();
+	\MLGMP\Repair::instance()->boot();
+	\MLGMP\NGGCleaner::instance()->boot();
+	\MLGMP\PhotoGalleryCleaner::instance()->boot();
 
 	// Initialize GitHub Updater
 	if ( is_admin() ) {
