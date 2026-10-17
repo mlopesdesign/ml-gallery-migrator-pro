@@ -1120,3 +1120,100 @@ body.admin-bar .mlgp-notice-stack {
 		grid-template-columns: 1fr;
 	}
 }
+
+/* ── Licença (1.1.0) ────────────────────────────────────────────────────── */
+.mlgmp-license-banner {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 18px;
+	padding: 14px 18px;
+	border: 1px solid rgba(199, 133, 18, 0.28);
+	border-radius: 14px;
+	background: #fffaf0;
+	box-shadow: var(--mlgp-shadow-soft);
+}
+.mlgmp-license-banner__text {
+	flex: 1 1 320px;
+	font-size: 13px;
+	line-height: 1.5;
+	color: var(--mlgp-ink);
+}
+.mlgmp-license {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+.mlgmp-license__kpis {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	margin-bottom: 0;
+}
+.mlgmp-license__kpis .mlgmp-reliability-metric__value {
+	font-size: 20px;
+}
+.mlgmp-license__form label {
+	display: block;
+	margin-bottom: 8px;
+	font-weight: 600;
+	font-size: 13px;
+	color: var(--mlgp-ink);
+}
+.mlgmp-license__row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+.mlgmp-license__row input[type="text"] {
+	flex: 1 1 220px;
+	min-height: 42px;
+	padding: 10px 12px;
+	border: 1px solid var(--mlgp-line);
+	border-radius: 10px;
+	background: var(--mlgp-surface-soft);
+	color: var(--mlgp-ink);
+	font-size: 14px;
+}
+.mlgmp-license__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin-top: 16px;
+}
+.mlgmp-license__actions form {
+	margin: 0;
+}
+.mlgmp-license__key {
+	margin: 0;
+	font-size: 13px;
+	color: var(--mlgp-muted);
+}
+.mlgmp-license__table {
+	min-width: 0;
+}
+.mlgmp-license__table th {
+	width: 34%;
+	color: var(--mlgp-ink);
+	font-size: 13px;
+	letter-spacing: 0;
+	vertical-align: top;
+}
+.mlgmp-license__table td:not(:first-child) {
+	text-align: left;
+	font-weight: 400;
+	line-height: 1.5;
+}
+.mlgmp-license__note {
+	margin: 14px 0 0;
+}
+@media (max-width: 900px) {
+	.mlgmp-license__kpis {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+.mlgp-shell__tags {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: 6px 14px;
+}

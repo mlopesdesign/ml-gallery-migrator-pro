@@ -50,3 +50,9 @@ delete_site_transient( 'mlgmp_github_release_latest' );
  * because they are considered migrated assets belonging to the user's library.
  * The plugin is a migrator; the assets stay.
  */
+
+/**
+ * 4. 1.1.0: licença pelo site tools — a licença local fica (reinstalar recupera);
+ * só a renovação diária é desagendada.
+ */
+wp_clear_scheduled_hook( 'mllc_ml_gallery_migrator_pro_refresh' );

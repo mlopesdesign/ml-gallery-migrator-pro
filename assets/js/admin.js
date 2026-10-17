@@ -412,6 +412,8 @@
 				applyState( res.data.state );
 				stopPoll();
 				scheduleBatch();
+			} else if ( res.data?.message ) {
+				alert( res.data.message );
 			}
 		} );
 	}
@@ -479,6 +481,11 @@
 				// Server says not running (paused/cancelled externally).
 				if ( res.data?.state ) {
 					applyState( res.data.state );
+				}
+				if ( res.data?.locked && res.data?.message ) {
+					// Licença: lote recusado. A migração fica parada até ativar a licença.
+					stopBatchLoop();
+					alert( res.data.message );
 				}
 				startPoll();
 				return;
@@ -975,7 +982,12 @@
 					}
 				}
 			} else {
-				if ( statusEl ) {
+				let errResp = null;
+				try { errResp = JSON.parse( xhr.responseText ); } catch ( e ) { errResp = null; }
+				if ( statusEl && errResp && errResp.data && errResp.data.message ) {
+					statusEl.textContent = '\u2715 ' + errResp.data.message;
+					statusEl.style.color = 'var(--mlgp-danger)';
+				} else if ( statusEl ) {
 					statusEl.textContent = '\u2715 Erro na requisição (' + xhr.status + ').';
 					statusEl.style.color = 'var(--mlgp-danger)';
 				}

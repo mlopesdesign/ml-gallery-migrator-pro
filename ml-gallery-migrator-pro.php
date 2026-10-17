@@ -3,7 +3,7 @@
  * Plugin Name: ML Gallery Migrator Pro
  * Plugin URI:  https://tools.mlopesdesign.com.br/
  * Description: Migração robusta do NextGEN Gallery e Photo Gallery para o ML Gallery Pro. Motor em lotes, logs persistentes, conversão de shortcodes e cópia física de arquivos.
- * Version: 1.0.69
+ * Version: 1.1.0
  * Author:      M Lopes Design
  * Author URI:  https://mlopesdesign.com.br/
  * Text Domain: ml-gallery-migrator-pro
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'MLGMP_VERSION', '1.0.69' );
+define( 'MLGMP_VERSION', '1.1.0' );
 define( 'MLGMP_FILE',     __FILE__ );
 define( 'MLGMP_BASENAME', plugin_basename( __FILE__ ) );
 define( 'MLGMP_DIR',      plugin_dir_path( __FILE__ ) );
@@ -27,6 +27,7 @@ define( 'MLGMP_URL',      plugin_dir_url( __FILE__ ) );
 define( 'MLGMP_SLUG',     'ml-gallery-migrator-pro' );
 
 require_once MLGMP_DIR . 'includes/class-installer.php';
+require_once MLGMP_DIR . 'includes/class-license.php';
 require_once MLGMP_DIR . 'includes/class-state.php';
 require_once MLGMP_DIR . 'includes/class-logger.php';
 require_once MLGMP_DIR . 'includes/class-ngg-reader.php';
@@ -48,7 +49,9 @@ register_deactivation_hook( __FILE__, [ 'MLGMP\\Installer', 'deactivate' ] );
 
 add_action( 'plugins_loaded', static function () {
 	load_plugin_textdomain( 'ml-gallery-migrator-pro', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
-	
+
+	// Licença pelo site tools.mlopesdesign.com.br (ML License Hub).
+	\MLGMP\License::boot();
 	\MLGMP\Admin::instance()->boot();
 	\MLGMP\Ajax::instance()->boot();
 	\MLGMP\Config::instance()->boot();

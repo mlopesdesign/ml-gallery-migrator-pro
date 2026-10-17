@@ -189,6 +189,9 @@ final class Config {
 			wp_send_json_error( [ 'message' => 'Invalid nonce' ], 403 );
 		}
 
+		// Licença: sem teste/licença, a configuração fica só para leitura.
+		License::guard_write( true );
+
 		// Extract settings from POST.
 		$settings = [];
 

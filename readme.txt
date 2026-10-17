@@ -4,7 +4,7 @@ Tags: nextgen, migration, gallery, photography, migrate
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.0.69
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -49,6 +49,12 @@ Não. Uma vez que todas as suas galerias e shortcodes foram convertidos para o M
 3. Logs detalhados de cada operação realizada pelo motor.
 
 == Changelog ==
+
+= 1.1.0 =
+* Licenca pelo site tools.mlopesdesign.com.br (ML License Hub). Aceita tambem a chave do Pacote Agencia (todos os plugins ML em varios sites).
+* Teste gratis de 30 dias por site. Quem ja usava o plugin recebe o teste automaticamente na primeira visita ao painel.
+* Nova aba Licenca no painel: situacao, plano, validade, ativar chave, comecar teste, conferir agora, remover deste site.
+* Sem teste ou licenca: ficam travados so iniciar/continuar a migracao, os reparos que copiam ou recriam itens e salvar a configuracao. As galerias ja migradas continuam no ar, a analise, os relatorios, os logs, pausar/cancelar e a limpeza continuam liberados, e nada e apagado.
 
 = 1.0.69 =
 * Atualizacoes passam a vir do repositorio publico mlopesdesign/ml-gallery-migrator-pro-releases (somente ZIPs).
