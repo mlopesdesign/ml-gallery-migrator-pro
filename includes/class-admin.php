@@ -167,6 +167,7 @@ final class Admin {
 			'ngg'           => NGGCleaner::scan(),
 			'photo_gallery' => PhotoGalleryCleaner::scan(),
 		];
+		$license       = License::summary();
 
 		?>
 		<div class="wrap mlgp-shell">
@@ -188,7 +189,7 @@ final class Admin {
 				<div class="mlgp-shell__meta">
 					<span class="mlgp-shell__version">v<?php echo esc_html( MLGMP_VERSION ); ?></span>
 					<div class="mlgp-shell__tags">
-						<span class="mlgp-shell__tag"><?php esc_html_e( 'Plugin Gratuito', 'ml-gallery-migrator-pro' ); ?></span>
+						<span class="mlgp-shell__tag"><?php echo esc_html( sprintf( __( 'Licença: %s', 'ml-gallery-migrator-pro' ), $license['label'] ) ); ?></span>
 						<span class="mlgp-shell__tag"><?php echo esc_html( sprintf( __( 'Origem atual: %s', 'ml-gallery-migrator-pro' ), $source_meta['label'] ) ); ?></span>
 					</div>
 				</div>
@@ -201,11 +202,17 @@ final class Admin {
 				<a class="mlgp-shell__tab <?php echo 'migration' === $tab ? 'is-active' : ''; ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=' . MLGMP_SLUG . '&tab=migration' ) ); ?>"><?php esc_html_e( 'Motor de Cópia', 'ml-gallery-migrator-pro' ); ?></a>
 				<a class="mlgp-shell__tab <?php echo 'config' === $tab ? 'is-active' : ''; ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=' . MLGMP_SLUG . '&tab=config' ) ); ?>"><?php esc_html_e( 'Configuração', 'ml-gallery-migrator-pro' ); ?></a>
 				<a class="mlgp-shell__tab <?php echo 'repair' === $tab ? 'is-active' : ''; ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=' . MLGMP_SLUG . '&tab=repair' ) ); ?>"><?php esc_html_e( 'Reparo', 'ml-gallery-migrator-pro' ); ?></a>
+				<a class="mlgp-shell__tab <?php echo 'license' === $tab ? 'is-active' : ''; ?>" href="<?php echo esc_url( License::tab_url() ); ?>"><?php esc_html_e( 'Licença', 'ml-gallery-migrator-pro' ); ?></a>
 			</nav>
 
 			<div class="mlgp-shell__content" id="mlgmp-app">
 			<?php
-			if ( 'config' === $tab ) {
+			if ( 'license' !== $tab && License::is_locked() ) {
+				$this->render_locked_banner();
+			}
+			if ( 'license' === $tab ) {
+				$this->render_license_tab( $license );
+			} elseif ( 'config' === $tab ) {
 				$this->render_config_tab();
 			} elseif ( 'repair' === $tab ) {
 				$this->render_repair_tab( $source );
@@ -949,6 +956,118 @@ if ( $_it_l < $_it_r ) {
 				</form>
 			</div>
 
+		</div>
+		<?php
+	}
+
+	// -----------------------------------------------------------------------
+	// Render: License
+	// -----------------------------------------------------------------------
+
+	/** Aviso discreto nas telas do plugin quando não há teste nem licença. */
+	private function render_locked_banner(): void {
+		?>
+		<div class="mlgmp-license-banner" role="status">
+			<span class="mlgmp-reliability-pill is-warning"><?php esc_html_e( 'Sem licença', 'ml-gallery-migrator-pro' ); ?></span>
+			<span class="mlgmp-license-banner__text"><?php esc_html_e( 'Iniciar a migração, rodar reparos e salvar a configuração estão travados. As galerias já migradas continuam no ar e nada é apagado.', 'ml-gallery-migrator-pro' ); ?></span>
+			<a class="mlgp-button mlgp-button--accent" href="<?php echo esc_url( License::tab_url() ); ?>"><?php esc_html_e( 'Ativar licença', 'ml-gallery-migrator-pro' ); ?></a>
+		</div>
+		<?php
+	}
+
+	private function render_license_tab( array $license ): void {
+		$notice      = isset( $_GET['mlgmp_lic_msg'] ) ? sanitize_text_field( rawurldecode( wp_unslash( $_GET['mlgmp_lic_msg'] ) ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$notice_type = isset( $_GET['mlgmp_lic_type'] ) && 'error' === sanitize_key( wp_unslash( $_GET['mlgmp_lic_type'] ) ) ? 'is-error' : 'is-success'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$post_url    = admin_url( 'admin-post.php' );
+		?>
+		<?php if ( '' !== $notice ) : ?>
+			<div class="mlgp-notice-stack"><div class="mlgp-notice <?php echo esc_attr( $notice_type ); ?>"><?php echo esc_html( $notice ); ?></div></div>
+		<?php endif; ?>
+
+		<div class="mlgmp-license">
+			<div class="mlgmp-reliability-metrics mlgmp-license__kpis">
+				<div class="mlgmp-reliability-metric"><span class="mlgmp-reliability-metric__value"><?php echo esc_html( $license['label'] ); ?></span><span class="mlgmp-reliability-metric__label"><?php esc_html_e( 'Situação', 'ml-gallery-migrator-pro' ); ?></span></div>
+				<div class="mlgmp-reliability-metric"><span class="mlgmp-reliability-metric__value"><?php echo esc_html( $license['plan_label'] ); ?></span><span class="mlgmp-reliability-metric__label"><?php esc_html_e( 'Plano', 'ml-gallery-migrator-pro' ); ?></span></div>
+				<div class="mlgmp-reliability-metric"><span class="mlgmp-reliability-metric__value"><?php echo esc_html( $license['valid_label'] ); ?></span><span class="mlgmp-reliability-metric__label"><?php esc_html_e( 'Válida até', 'ml-gallery-migrator-pro' ); ?></span></div>
+				<div class="mlgmp-reliability-metric"><span class="mlgmp-reliability-metric__value"><?php echo esc_html( $license['days_label'] ); ?></span><span class="mlgmp-reliability-metric__label"><?php esc_html_e( 'Dias restantes', 'ml-gallery-migrator-pro' ); ?></span></div>
+			</div>
+
+			<div class="mlgp-grid-two mlgmp-license__grid">
+				<div>
+					<div class="mlgp-panel">
+						<div class="mlgmp-reliability-card__head">
+							<h2 class="mlgmp-reliability-card__title"><?php esc_html_e( 'Licença', 'ml-gallery-migrator-pro' ); ?></h2>
+							<span class="mlgmp-reliability-pill is-<?php echo esc_attr( $license['tone'] ); ?>"><?php echo esc_html( $license['label'] ); ?></span>
+						</div>
+						<p class="mlgmp-reliability-card__desc"><?php echo esc_html( $license['message'] ); ?><br><small><?php echo esc_html( sprintf( __( 'Site: %s', 'ml-gallery-migrator-pro' ), $license['domain'] ) ); ?></small></p>
+
+						<?php if ( 'license' === $license['mode'] && '' !== $license['key_masked'] ) : ?>
+							<p class="mlgmp-license__key"><span><?php esc_html_e( 'Chave neste site', 'ml-gallery-migrator-pro' ); ?></span> <code><?php echo esc_html( $license['key_masked'] ); ?></code></p>
+							<div class="mlgmp-license__actions">
+								<form method="post" action="<?php echo esc_url( $post_url ); ?>">
+									<?php wp_nonce_field( 'mlgmp_sync_license' ); ?>
+									<input type="hidden" name="action" value="mlgmp_sync_license">
+									<input type="hidden" name="mlgmp_op" value="check">
+									<button type="submit" class="mlgp-button mlgp-button--accent"><?php esc_html_e( 'Conferir agora', 'ml-gallery-migrator-pro' ); ?></button>
+								</form>
+								<form method="post" action="<?php echo esc_url( $post_url ); ?>">
+									<?php wp_nonce_field( 'mlgmp_remove_license' ); ?>
+									<input type="hidden" name="action" value="mlgmp_remove_license">
+									<button type="submit" class="mlgp-button mlgp-button--danger"><?php esc_html_e( 'Remover deste site', 'ml-gallery-migrator-pro' ); ?></button>
+								</form>
+							</div>
+						<?php else : ?>
+							<form method="post" action="<?php echo esc_url( $post_url ); ?>" class="mlgmp-license__form">
+								<?php wp_nonce_field( 'mlgmp_activate_license' ); ?>
+								<input type="hidden" name="action" value="mlgmp_activate_license">
+								<label for="mlgmp-license-key"><?php esc_html_e( 'Chave da licença', 'ml-gallery-migrator-pro' ); ?></label>
+								<div class="mlgmp-license__row">
+									<input type="text" id="mlgmp-license-key" name="license_key" value="" placeholder="<?php esc_attr_e( 'Cole aqui a sua chave', 'ml-gallery-migrator-pro' ); ?>" autocomplete="off" spellcheck="false">
+									<button type="submit" class="mlgp-button mlgp-button--accent"><?php esc_html_e( 'Ativar licença', 'ml-gallery-migrator-pro' ); ?></button>
+								</div>
+							</form>
+							<div class="mlgmp-license__actions">
+								<?php if ( $license['can_start_trial'] ) : ?>
+									<form method="post" action="<?php echo esc_url( $post_url ); ?>">
+										<?php wp_nonce_field( 'mlgmp_sync_license' ); ?>
+										<input type="hidden" name="action" value="mlgmp_sync_license">
+										<input type="hidden" name="mlgmp_op" value="trial">
+										<button type="submit" class="mlgp-button"><?php esc_html_e( 'Começar teste grátis de 30 dias', 'ml-gallery-migrator-pro' ); ?></button>
+									</form>
+								<?php elseif ( $license['is_trial'] ) : ?>
+									<form method="post" action="<?php echo esc_url( $post_url ); ?>">
+										<?php wp_nonce_field( 'mlgmp_sync_license' ); ?>
+										<input type="hidden" name="action" value="mlgmp_sync_license">
+										<input type="hidden" name="mlgmp_op" value="check">
+										<button type="submit" class="mlgp-button"><?php esc_html_e( 'Conferir agora', 'ml-gallery-migrator-pro' ); ?></button>
+									</form>
+								<?php endif; ?>
+								<a class="mlgp-button mlgp-button--ghost" href="<?php echo esc_url( License::BUY_URL ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Comprar licença', 'ml-gallery-migrator-pro' ); ?></a>
+								<a class="mlgp-button mlgp-button--ghost" href="<?php echo esc_url( License::ACCOUNT_URL ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Minha conta', 'ml-gallery-migrator-pro' ); ?></a>
+							</div>
+						<?php endif; ?>
+					</div>
+				</div>
+				<div>
+					<div class="mlgp-panel">
+						<div class="mlgmp-reliability-card__head">
+							<h2 class="mlgmp-reliability-card__title"><?php esc_html_e( 'Como funciona', 'ml-gallery-migrator-pro' ); ?></h2>
+							<span class="mlgmp-reliability-pill is-neutral">tools.mlopesdesign.com.br</span>
+						</div>
+						<div class="mlgmp-table-scroll">
+							<table class="mlgmp-table mlgmp-license__table">
+								<tbody>
+									<tr><th><?php esc_html_e( 'Teste grátis', 'ml-gallery-migrator-pro' ); ?></th><td><?php esc_html_e( '30 dias com tudo liberado, uma vez por site. Reinstalar não reinicia.', 'ml-gallery-migrator-pro' ); ?></td></tr>
+									<tr><th><?php esc_html_e( 'Licença anual', 'ml-gallery-migrator-pro' ); ?></th><td><?php esc_html_e( 'Vale em 1 site. Para usar em outro, remova deste site.', 'ml-gallery-migrator-pro' ); ?></td></tr>
+									<tr><th><?php esc_html_e( 'Pacote Agência', 'ml-gallery-migrator-pro' ); ?></th><td><?php esc_html_e( 'Uma chave para todos os plugins ML em 5, 10 ou 50 sites.', 'ml-gallery-migrator-pro' ); ?></td></tr>
+									<tr><th><?php esc_html_e( 'Sem licença', 'ml-gallery-migrator-pro' ); ?></th><td><?php esc_html_e( 'As galerias já migradas continuam no ar e nada é apagado. Só ficam travados iniciar a migração, rodar reparos e salvar a configuração.', 'ml-gallery-migrator-pro' ); ?></td></tr>
+								</tbody>
+							</table>
+						</div>
+						<p class="mlgmp-reliability-card__desc mlgmp-license__note"><?php esc_html_e( 'A licença é conferida uma vez por dia. Sem internet, o site continua liberado por até 7 dias.', 'ml-gallery-migrator-pro' ); ?></p>
+					</div>
+				</div>
+			</div>
 		</div>
 		<?php
 	}

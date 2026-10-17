@@ -78,6 +78,27 @@ final class Ajax {
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$action = sanitize_key( isset( $_REQUEST['action'] ) ? wp_unslash( $_REQUEST['action'] ) : '' );
 
+		// Licença: sem teste/licença, iniciar e continuar a migração ficam travados.
+		// Análise, pausar, cancelar, zerar e acompanhar continuam liberados.
+		if ( in_array( $action, [ 'mlgmp_start', 'mlgmp_batch', 'mlgmp_resume' ], true ) && License::is_locked() ) {
+			$state = State::get();
+			if ( 'mlgmp_batch' === $action && State::STATUS_RUNNING === $state['status'] ) {
+				// Migração em andamento quando a licença venceu: pausa (pode retomar depois de ativar).
+				$state['status'] = State::STATUS_PAUSED;
+				State::save( $state );
+				$log = new Logger( $state['session_id'], $state['current_stage'] );
+				$log->warning( __( 'Migração pausada: sem licença ativa neste site.', 'ml-gallery-migrator-pro' ) );
+			}
+			wp_send_json_error(
+				[
+					'message' => License::locked_message(),
+					'locked'  => true,
+					'state'   => $state,
+				],
+				403
+			);
+		}
+
 		switch ( $action ) {
 			case 'mlgmp_analyse':
 				$this->handle_analyse();

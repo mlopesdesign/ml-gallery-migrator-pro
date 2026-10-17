@@ -2064,7 +2064,14 @@ final class Repair {
 		}
 
 		$operation = isset( $_POST['operation'] ) ? sanitize_key( wp_unslash( $_POST['operation'] ) ) : '';
-		$source    = isset( $_POST['source'] )    ? sanitize_key( wp_unslash( $_POST['source'] ) )    : 'ngg';
+
+		// Licença: sem teste/licença, os reparos que copiam ou recriam itens ficam travados.
+		// A auditoria de integridade (só leitura) continua liberada.
+		if ( 'revalidate_integrity' !== $operation ) {
+			License::guard_write( true );
+		}
+
+		$source    =isset( $_POST['source'] )    ? sanitize_key( wp_unslash( $_POST['source'] ) )    : 'ngg';
 		$cursor    = isset( $_POST['cursor'] )     ? absint( wp_unslash( $_POST['cursor'] ) )           : 0;
 
 		if ( ! in_array( $source, [ 'ngg', 'photo_gallery' ], true ) ) {
@@ -2322,6 +2329,9 @@ final class Repair {
 		if ( ! wp_verify_nonce( $nonce, 'mlgmp_ajax' ) ) {
 			wp_send_json_error( [ 'message' => 'Invalid nonce' ], 403 );
 		}
+
+		// Licença: recuperar itens é uma migração parcial — travado sem teste/licença.
+		License::guard_write( true );
 
 		// Capture any stray output to keep response clean JSON.
 		ob_start();
@@ -2627,6 +2637,9 @@ final class Repair {
 		if ( ! wp_verify_nonce( $nonce, 'mlgmp_ajax' ) ) {
 			wp_send_json_error( [ 'message' => 'Invalid nonce' ], 403 );
 		}
+
+		// Licença: recuperar itens é uma migração parcial — travado sem teste/licença.
+		License::guard_write( true );
 
 		ob_start();
 
